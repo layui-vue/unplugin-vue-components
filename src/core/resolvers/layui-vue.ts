@@ -1,6 +1,11 @@
 import type { ComponentInfo, ComponentResolver, SideEffectsInfo } from '../../types'
 
-const matchComponents = [
+interface MatchComponentsType {
+  pattern: RegExp
+  styleDir: string | undefined
+}
+
+const matchComponents: Array<MatchComponentsType> = [
   {
     pattern: /^LayAvatarList$/,
     styleDir: 'avatar',
@@ -73,6 +78,10 @@ const matchComponents = [
     pattern: /^LayTimelineItem$/,
     styleDir: 'timeline',
   },
+  {
+    pattern: /^LayDescriptionsItem$/,
+    styleDir: undefined,
+  },
 ]
 
 export interface LayuiVueResolverOptions {
@@ -96,6 +105,8 @@ export interface LayuiVueResolverOptions {
    *
    */
   exclude?: Array<string | RegExp>
+
+  customMatchComponents?: Array<MatchComponentsType>
 }
 
 const layuiRE = /^Lay[A-Z]/
@@ -108,7 +119,7 @@ function lowerCamelCase(str: string) {
 }
 
 function getSideEffects(importName: string, options: LayuiVueResolverOptions): SideEffectsInfo | undefined {
-  const { importStyle = 'css' } = options
+  const { importStyle = 'css', customMatchComponents = [] } = options
   if (!importStyle)
     return undefined
 
@@ -116,7 +127,7 @@ function getSideEffects(importName: string, options: LayuiVueResolverOptions): S
     return `${libName}/lib/index.css`
 
   let styleDir: string | undefined = lowerCamelCase(importName.slice(3)) // LayBackTop -> backTop
-  for (const item of matchComponents) {
+  for (const item of [...matchComponents, ...customMatchComponents]) {
     if (item.pattern.test(importName)) {
       styleDir = item.styleDir
       break
