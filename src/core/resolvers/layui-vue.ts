@@ -82,6 +82,10 @@ const matchComponents: Array<MatchComponentsType> = [
     pattern: /^LayDescriptionsItem$/,
     styleDir: undefined,
   },
+  {
+    pattern: /^LayTimeSelect$/,
+    styleDir: 'select',
+  },
 ]
 
 export interface LayuiVueResolverOptions {
