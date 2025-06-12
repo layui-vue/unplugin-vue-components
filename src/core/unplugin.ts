@@ -1,11 +1,11 @@
-import { existsSync } from 'node:fs'
-import process from 'node:process'
-import { createUnplugin } from 'unplugin'
-import { createFilter } from '@rollup/pluginutils'
-import chokidar from 'chokidar'
 import type { ResolvedConfig, ViteDevServer } from 'vite'
 import type { Watching } from 'webpack'
 import type { Options, PublicPluginAPI } from '../types'
+import { existsSync } from 'node:fs'
+import process from 'node:process'
+import chokidar from 'chokidar'
+import { createUnplugin } from 'unplugin'
+import { createFilter } from 'unplugin-utils'
 import { Context } from './context'
 import { shouldTransform, stringifyComponentImport } from './utils'
 
@@ -13,7 +13,12 @@ const PLUGIN_NAME = 'unplugin:webpack'
 
 export default createUnplugin<Options>((options = {}) => {
   const filter = createFilter(
-    options.include || [/\.vue$/, /\.vue\?vue/, /\.vue\?v=/],
+    options.include || [
+      /\.vue$/,
+      /\.vue\?vue/,
+      /\.vue\.[tj]sx?\?vue/, // for vue-loader with experimentalInlineMatchResource enabled
+      /\.vue\?v=/,
+    ],
     options.exclude || [/[\\/]node_modules[\\/]/, /[\\/]\.git[\\/]/, /[\\/]\.nuxt[\\/]/],
   )
   const ctx: Context = new Context(options)
@@ -43,6 +48,7 @@ export default createUnplugin<Options>((options = {}) => {
       try {
         const result = await ctx.transform(code, id)
         ctx.generateDeclaration()
+        ctx.generateComponentsJson()
         return result
       }
       catch (e) {
@@ -62,6 +68,11 @@ export default createUnplugin<Options>((options = {}) => {
           ctx.searchGlob()
           if (!existsSync(ctx.options.dts))
             ctx.generateDeclaration()
+        }
+
+        if (ctx.options.dumpComponentsInfo && ctx.dumpComponentsInfoPath) {
+          if (!existsSync(ctx.dumpComponentsInfoPath))
+            ctx.generateComponentsJson()
         }
 
         if (config.build.watch && config.command === 'build')

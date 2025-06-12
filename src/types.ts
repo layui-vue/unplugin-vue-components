@@ -1,6 +1,6 @@
-import type { FilterPattern } from '@rollup/pluginutils'
-import type { TransformResult } from 'unplugin'
 import type { Awaitable } from '@antfu/utils'
+import type { TransformResult } from 'unplugin'
+import type { FilterPattern } from 'unplugin-utils'
 
 export interface ImportInfoLegacy {
   /**
@@ -72,6 +72,11 @@ export interface Options {
   exclude?: FilterPattern
 
   /**
+   * RegExp or string to match component names that will NOT be imported
+   */
+  excludeNames?: FilterPattern
+
+  /**
    * Relative paths to the directory to search for components.
    * @default 'src/components'
    */
@@ -86,9 +91,16 @@ export interface Options {
   /**
    * Glob patterns to match file names to be detected as components.
    *
-   * When specified, the `dirs` and `extensions` options will be ignored.
+   * When specified, the `dirs`, `extensions`, and `directoryAsNamespace` options will be ignored.
    */
   globs?: string | string[]
+
+  /**
+   * Negated glob patterns to exclude files from being detected as components.
+   *
+   * @default []
+   */
+  globsExclude?: string | string[]
 
   /**
    * Search for subdirectories
@@ -139,6 +151,16 @@ export interface Options {
   transformer?: SupportedTransformer
 
   /**
+   * Tranform users' usage of resolveComponent/resolveDirective as well
+   *
+   * If disabled, only components inside templates (which compiles to `_resolveComponent` etc.)
+   * will be transformed.
+   *
+   * @default true
+   */
+  transformerUserResolveFunctions?: boolean
+
+  /**
    * Generate TypeScript declaration for global components
    *
    * Accept boolean or a path related to project root
@@ -176,6 +198,23 @@ export interface Options {
    * Vue version of project. It will detect automatically if not specified.
    */
   version?: 2 | 2.7 | 3
+
+  /**
+   * Generate sourcemap for the transformed code.
+   *
+   * @default true
+   */
+  sourcemap?: boolean
+
+  /**
+   * Save component information into a JSON file for other tools to consume.
+   * Provide a filepath to save the JSON file.
+   *
+   * When set to `true`, it will save to `./.components-info.json`
+   *
+   * @default false
+   */
+  dumpComponentsInfo?: boolean | string
 }
 
 export type ResolvedOptions = Omit<
@@ -187,6 +226,7 @@ export type ResolvedOptions = Omit<
   dirs: string[]
   resolvedDirs: string[]
   globs: string[]
+  globsExclude: string[]
   dts: string | false
   root: string
 }

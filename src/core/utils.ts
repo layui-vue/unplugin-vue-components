@@ -1,13 +1,14 @@
+import type { FilterPattern } from 'unplugin-utils'
+import type { ComponentInfo, ImportInfo, ImportInfoLegacy, Options, ResolvedOptions } from '../types'
+import type { Context } from './context'
 import { parse } from 'node:path'
 import process from 'node:process'
-import { minimatch } from 'minimatch'
 import { slash, toArray } from '@antfu/utils'
 import {
   getPackageInfo,
   isPackageExists,
 } from 'local-pkg'
-import type { ComponentInfo, ImportInfo, ImportInfoLegacy, Options, ResolvedOptions } from '../types'
-import type { Context } from './context'
+import { minimatch } from 'minimatch'
 import { DISABLE_COMMENT } from './constants'
 
 export const isSSR = Boolean(process.env.SSR || process.env.SSG || process.env.VITE_SSR || process.env.VITE_SSG)
@@ -221,4 +222,23 @@ export function shouldTransform(code: string) {
   if (code.includes(DISABLE_COMMENT))
     return false
   return true
+}
+
+export function isExclude(name: string, exclude?: FilterPattern): boolean {
+  if (!exclude)
+    return false
+
+  if (typeof exclude === 'string')
+    return name === exclude
+
+  if (exclude instanceof RegExp)
+    return !!name.match(exclude)
+
+  if (Array.isArray(exclude)) {
+    for (const item of exclude) {
+      if (name === item || name.match(item))
+        return true
+    }
+  }
+  return false
 }

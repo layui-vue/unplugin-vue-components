@@ -73,7 +73,7 @@ export default {
 module.exports = {
   /* ... */
   plugins: [
-    require('unplugin-vue-components/webpack').default({ /* options */ }),
+    require('unplugin-vue-components/webpack')({ /* options */ }),
   ],
 }
 ```
@@ -88,7 +88,7 @@ module.exports = {
 module.exports = {
   /* ... */
   plugins: [
-    require('unplugin-vue-components/rspack').default({ /* options */ }),
+    require('unplugin-vue-components/rspack')({ /* options */ }),
   ],
 }
 ```
@@ -110,7 +110,7 @@ You might not need this plugin for Nuxt. Use [`@nuxt/components`](https://github
 module.exports = {
   /* ... */
   plugins: [
-    require('unplugin-vue-components/webpack').default({ /* options */ }),
+    require('unplugin-vue-components/webpack')({ /* options */ }),
   ],
 }
 ```
@@ -230,7 +230,9 @@ Supported Resolvers:
 - [Quasar](https://github.com/antfu/unplugin-vue-components/blob/main/src/core/resolvers/quasar.ts)
 - [TDesign](https://github.com/antfu/unplugin-vue-components/blob/main/src/core/resolvers/tdesign.ts)
 - [Vant](https://github.com/antfu/unplugin-vue-components/blob/main/src/core/resolvers/vant.ts)
+  - [`@vant/auto-import-resolver`](https://github.com/youzan/vant/blob/main/packages/vant-auto-import-resolver/README.md) - Vant's own auto-import resolver
 - [Varlet UI](https://github.com/antfu/unplugin-vue-components/blob/main/src/core/resolvers/varlet-ui.ts)
+  - [`@varlet/import-resolver`](https://github.com/varletjs/varlet/blob/dev/packages/varlet-import-resolver/README.md) - Varlet's own auto-import resolver
 - [VEUI](https://github.com/antfu/unplugin-vue-components/blob/main/src/core/resolvers/veui.ts)
 - [View UI](https://github.com/antfu/unplugin-vue-components/blob/main/src/core/resolvers/view-ui.ts)
 - [Vuetify](https://github.com/antfu/unplugin-vue-components/blob/main/src/core/resolvers/vuetify.ts) &mdash; Prefer first-party plugins when possible: [v3 + vite](https://www.npmjs.com/package/vite-plugin-vuetify), [v3 + webpack](https://www.npmjs.com/package/webpack-plugin-vuetify), [v2 + webpack](https://npmjs.com/package/vuetify-loader)
@@ -239,13 +241,13 @@ Supported Resolvers:
 - [Dev UI](https://github.com/antfu/unplugin-vue-components/blob/main/src/core/resolvers/devui.ts)
 
 ```ts
-// vite.config.js
-import Components from 'unplugin-vue-components/vite'
 import {
   AntDesignVueResolver,
   ElementPlusResolver,
   VantResolver,
 } from 'unplugin-vue-components/resolvers'
+// vite.config.js
+import Components from 'unplugin-vue-components/vite'
 
 // your plugin installation
 Components({
@@ -339,7 +341,7 @@ export default {
 
       // `customLoaderMatcher` is depreacted, use `include` instead
 -     customLoaderMatcher: id => id.endsWith('.md'),
-+     include: [/\.vue$/, /\.vue\?vue/, /\.md$/],
++     include: [/\.vue$/, /\.vue\?vue/, /\.vue\.[tj]sx?\?vue/, /\.md$/],
     }),
   ],
 }
@@ -358,9 +360,10 @@ Components({
   extensions: ['vue'],
 
   // Glob patterns to match file names to be detected as components.
-  // When specified, the `dirs` and `extensions` options will be ignored.
+  // You can also specify multiple like this: `src/components/*.{vue,tsx}`
+  // When specified, the `dirs`, `extensions`, and `directoryAsNamespace` options will be ignored.
   // If you want to exclude components being registered, use negative globs with leading `!`.
-  globs: ['src/components/*.{vue}'],
+  globs: ['src/components/*.vue'],
 
   // search for subdirectories
   deep: true,
@@ -398,9 +401,13 @@ Components({
   allowOverrides: false,
 
   // Filters for transforming targets (components to insert the auto import)
-  // Note these are NOT about including/excluding components registered - use `globs` for that
-  include: [/\.vue$/, /\.vue\?vue/],
+  // Note these are NOT about including/excluding components registered - use `globs` or `excludeNames` for that
+  include: [/\.vue$/, /\.vue\?vue/, /\.vue\.[tj]sx?\?vue/],
   exclude: [/[\\/]node_modules[\\/]/, /[\\/]\.git[\\/]/, /[\\/]\.nuxt[\\/]/],
+
+  // Filters for component names that will not be imported
+  // Use for globally imported async components or other conflicts that the plugin cannot detect
+  excludeNames: [/^Async.+/],
 
   // Vue version of project. It will detect automatically if not specified.
   // Acceptable value: 2 | 2.7 | 3

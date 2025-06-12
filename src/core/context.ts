@@ -1,16 +1,16 @@
-import { relative } from 'node:path'
 import type fs from 'node:fs'
-import process from 'node:process'
-import Debug from 'debug'
 import type { UpdatePayload, ViteDevServer } from 'vite'
-import { slash, throttle, toArray } from '@antfu/utils'
 import type { ComponentInfo, Options, ResolvedOptions, Transformer } from '../types'
+import { relative } from 'node:path'
+import process from 'node:process'
+import { slash, throttle, toArray } from '@antfu/utils'
+import Debug from 'debug'
 import { DIRECTIVE_IMPORT_PREFIX } from './constants'
-import { getNameFromFilePath, matchGlobs, normalizeComponentInfo, parseId, pascalCase, resolveAlias } from './utils'
-import { resolveOptions } from './options'
+import { writeComponentsJson, writeDeclaration } from './declaration'
 import { searchComponents } from './fs/glob'
-import { writeDeclaration } from './declaration'
+import { resolveOptions } from './options'
 import transformer from './transformer'
+import { getNameFromFilePath, isExclude, matchGlobs, normalizeComponentInfo, parseId, pascalCase, resolveAlias } from './utils'
 
 const debug = {
   components: Debug('unplugin-vue-components:context:components'),
@@ -34,12 +34,24 @@ export class Context {
   root = process.cwd()
   sourcemap: string | boolean = true
   alias: Record<string, string> = {}
+  dumpComponentsInfoPath: string | undefined
 
   constructor(
     private rawOptions: Options,
   ) {
     this.options = resolveOptions(rawOptions, this.root)
+    this.sourcemap = rawOptions.sourcemap ?? true
     this.generateDeclaration = throttle(500, this._generateDeclaration.bind(this), { noLeading: false })
+
+    if (this.options.dumpComponentsInfo) {
+      const dumpComponentsInfo = this.options.dumpComponentsInfo === true
+        ? './.components-info.json'
+        : this.options.dumpComponentsInfo ?? false
+
+      this.dumpComponentsInfoPath = dumpComponentsInfo
+      this.generateComponentsJson = throttle(500, this._generateComponentsJson.bind(this), { noLeading: false })
+    }
+
     this.setTransformer(this.options.transformer)
   }
 
@@ -168,6 +180,7 @@ export class Context {
 
   onUpdate(path: string) {
     this.generateDeclaration()
+    this.generateComponentsJson()
 
     if (!this._server)
       return
@@ -203,6 +216,10 @@ export class Context {
       .from(this._componentPaths)
       .forEach((path) => {
         const name = pascalCase(getNameFromFilePath(path, this.options))
+        if (isExclude(name, this.options.excludeNames)) {
+          debug.components('exclude', name)
+          return
+        }
         if (this._componentNameMap[name] && !this.options.allowOverrides) {
           console.warn(`[unplugin-vue-components] component "${name}"(${path}) has naming conflicts with other components, ignored.`)
           return
@@ -283,11 +300,25 @@ export class Context {
     if (!this.options.dts)
       return
 
-    debug.declaration('generating')
+    debug.declaration('generating dts')
     return writeDeclaration(this, this.options.dts, removeUnused)
   }
 
-  generateDeclaration
+  generateDeclaration(removeUnused = !this._server): void {
+    this._generateDeclaration(removeUnused)
+  }
+
+  _generateComponentsJson(removeUnused = !this._server) {
+    if (!Object.keys(this._componentNameMap).length)
+      return
+
+    debug.components('generating components-info')
+    return writeComponentsJson(this, removeUnused)
+  }
+
+  generateComponentsJson(removeUnused = !this._server): void {
+    this._generateComponentsJson(removeUnused)
+  }
 
   get componentNameMap() {
     return this._componentNameMap
