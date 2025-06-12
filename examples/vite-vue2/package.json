@@ -10,9 +10,9 @@
     "vue": "^2.7.16"
   },
   "devDependencies": {
+    "@layui/unplugin-vue-components": "workspace:*",
     "@vitejs/plugin-vue2": "^2.3.3",
     "cross-env": "^7.0.3",
-    "unplugin-vue-components": "workspace:*",
     "vite": "^6.3.5"
   }
 }

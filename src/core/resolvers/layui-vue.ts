@@ -181,6 +181,8 @@ export function LayuiVueResolver(
   return {
     type: 'component',
     resolve: (name: string) => {
+      console.log(name, 'name>>>>>')
+
       return resolveComponent(name, options)
     },
   }
